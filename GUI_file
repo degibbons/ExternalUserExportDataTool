@@ -3,6 +3,9 @@ from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfilename
 import re
 from shutil import copyfile
 import os
+from docx import Document
+
+global targDir
 
 
 def loadLogFile(event):
@@ -19,17 +22,17 @@ def loadLogFile(event):
         text = input_file.read()
         # exp_addcomment.insert("1.0", text)
         # return
-        regex_1 = re.compile('Date and Time\s*=\s*(.+)')
-        regex_2 = re.compile('Filename Prefix\s*=\s*(.+)')
+        regex_1 = re.compile(r'Date and Time\s*=\s*(.+)')
+        regex_2 = re.compile(r'Filename Prefix\s*=\s*(.+)')
         regex_3 = re.compile(r'Source Voltage\s*\(kV\)\s*=\s*(.+)')
         regex_4 = re.compile(r'Source Current\s*\(uA\)\s*=\s*(.+)')
         regex_5 = re.compile(r'Image Pixel Size\s*\(um\)\s*=\s*(.+)')
-        regex_6 = re.compile('Filter\s*=\s*(.+)')
+        regex_6 = re.compile(r'Filter\s*=\s*(.+)')
         regex_7 = re.compile(r'Exposure\s*\(ms\)\s*=\s*(.+)')
         regex_8 = re.compile(r'Rotation Step\s*\(deg\)=(.+)')
-        regex_9 = re.compile('Frame Averaging\s*=\s*(.+)')
-        regex_10 = re.compile('Random Movement\s*=\s*(.+)')
-        regex_11 = re.compile('Use 360 Rotation\s*=\s*(.+)')
+        regex_9 = re.compile(r'Frame Averaging\s*=\s*(.+)')
+        regex_10 = re.compile(r'Random Movement\s*=\s*(.+)')
+        regex_11 = re.compile(r'Use 360 Rotation\s*=\s*(.+)')
 
         result_1 = regex_1.search(text)
         result_2 = regex_2.search(text)
@@ -90,19 +93,74 @@ def loadLogFile(event):
         else:
             exp_360moveN.select()
 
-    return 0
+    return
+
+
+def selectDestination(event):
+    global targDir
+    targetDir = askdirectory()
+    targDir = targetDir
+
+    return
+
+
+def loadTemplateFile(event):
+    # Make a copy of reference doc
+    global targDir
+    filepath = askopenfilename(
+        filetypes=[("Word Doc Files", "*.docx"), ("All Files", "*.*")]
+    )
+    if not filepath:
+        return
+    outFile = targDir + "/External_User_Info.docx"
+    copyfile(filepath, outFile)
+    targDir = outFile
+
+    return
 
 
 def publishLogFile(event):
-    # Make a copy of reference doc
     # Publish field information to new doc copy
-    cwd = os.getcwd()
-    targetDir = askdirectory()
-    copyfile(r'C:\Users\daneg\Documents\NYIT\Hurdle\External_User_Info_Sheet_REFERENCE.docx', r'C:\Users\daneg'
-                                                                                              r'\Documents\NYIT'
-                                                                                              r'\Hurdle'
-                                                                                              r'\External_User_Info_Sheet.docx')
+    global targDir
+    # cwd = os.getcwd()
+    # os.chdir()
 
+    # with open(targDir, 'rb') as f:
+    #     source_stream = StringIO(f.read())
+    #     document = Document(f)
+
+    doc = Document(targDir)
+    DateLine = doc.paragraphs[1]
+    FileLine = doc.paragraphs[2]
+    ScannedLine = doc.paragraphs[3]
+    MachineLine = doc.paragraphs[4]
+    VoltageLine = doc.paragraphs[6]
+    CurrentLine = doc.paragraphs[7]
+    PixelLine = doc.paragraphs[8]
+    FilterLine = doc.paragraphs[9]
+    ExposureLine = doc.paragraphs[10]
+    RotationLine = doc.paragraphs[11]
+    FrameLine = doc.paragraphs[12]
+    RandMovLine = doc.paragraphs[13]
+    Rot360Line = doc.paragraphs[14]
+    AddCommentsLine = doc.paragraphs[15]
+
+    NewDate = exp_date.get()
+    NewFile = exp_filename.get()
+    NewScanned = exp_scannedby.get()
+    NewMachine = exp_machine.get()
+    NewVoltage = exp_voltage.get()
+    NewCurrent = exp_current.get()
+    NewPixel = exp_pixelsize.get()
+    NewFilter = exp_filter.get()
+    NewExposure = exp_exposure.get()
+    NewRotation= exp_rotationstep.get()
+    NewFrame = exp_frameaverage.get()
+    NewRandMov = exp_randmovement.get()
+    NewRot360 = # 
+    NewAddComment = exp_addcomment.get("1.0",tk.END)
+
+    #exp_addcomment.insert("1.0", VoltageLine.text)
 
 def resetFields(event):
     exp_date.delete(0, tk.END)
@@ -118,7 +176,7 @@ def resetFields(event):
     exp_frameaverage.delete(0, tk.END)
     exp_randmovement.delete(0, tk.END)
     exp_360moveY.select()
-    exp_addcomment.delete("1.0", tk.END)
+    exp_filter.delete("1.0", tk.END)
 
 
 # Initialize the GUI Window
@@ -126,14 +184,18 @@ root = tk.Tk()
 
 # Add the Title of the Tool to the top of the window
 frame_1 = tk.Frame(master=root, relief=tk.RAISED, borderwidth=1)
-exp_title = tk.Label(frame_1, text='Log Export Tool')
-frame_1.grid(column=0, row=0, columnspan=6, sticky='ew')
-exp_title.grid(column=0, row=0, columnspan=6)
+exp_title = tk.Label(master=frame_1, text='External User Log Tool', font="Helvetica 18 bold")
+frame_1.grid(column=0, row=0, columnspan=6)
+exp_title.grid(column=0, row=0, sticky='EW')
 
 # Initialize the Load Button for loading log files for extraction
-exp_loadbutton = tk.Button(text='Load')
-exp_loadbutton.grid(column=4, row=1, columnspan=2)
+exp_loadbutton = tk.Button(text='Load Log File')
+exp_loadbutton.grid(column=4, row=1)
 exp_loadbutton.bind("<Button-1>", loadLogFile)
+
+exp_templbutton = tk.Button(text='Select Template File')
+exp_templbutton.grid(column=4, row=7, columnspan=2, sticky='N', pady=15)
+exp_templbutton.bind("<Button-1>", loadTemplateFile)
 
 # Initialize entry box for Date of Scan
 exp_date_Label = tk.Label(text='Date: ')
@@ -160,13 +222,13 @@ exp_machine = tk.Entry()
 exp_machine.grid(column=3, row=2, sticky='w')
 
 # Initialize entry box for voltage used on scan in kilovolts
-exp_voltage_Label = tk.Label(text='Voltage(kV): ')
+exp_voltage_Label = tk.Label(text='Voltage (kV): ')
 exp_voltage_Label.grid(column=0, row=3, sticky='e')
 exp_voltage = tk.Entry()
 exp_voltage.grid(column=1, row=3, sticky='w')
 
 # Initialize entry box for current used on scan in microampere
-exp_current_Label = tk.Label(text='Current(uA): ')
+exp_current_Label = tk.Label(text='Current (uA): ')
 exp_current_Label.grid(column=2, row=3, sticky='e')
 exp_current = tk.Entry()
 exp_current.grid(column=3, row=3, sticky='w')
@@ -220,18 +282,27 @@ exp_360moveN.deselect()
 
 # Initialize text box for adding additional comments
 exp_addcomment_Label = tk.Label(text='Additional Comments: ')
-exp_addcomment_Label.grid(column=0, row=6, columnspan=2, sticky='w')
+exp_addcomment_Label.grid(column=0, row=6, columnspan=2, sticky='w', padx=10)
 exp_addcomment = tk.Text(height=10)
-exp_addcomment.grid(column=0, row=7, columnspan=4, rowspan=2)
+exp_addcomment.grid(column=0, row=7, columnspan=4, rowspan=2, padx=10, pady=10)
+
+exp_frame2 = tk.Frame(master=root)
+
+exp_targetbutton = tk.Button(master=root, text='Select Target Directory')
+exp_targetbutton.grid(column=5, row=1, padx=10)
+exp_targetbutton.bind("<Button-1>", selectDestination)
 
 # Initialize Publish button for publishing final results to word doc
-exp_pubbutton = tk.Button(text='Publish')
-exp_pubbutton.grid(column=4, row=7, columnspan=2)
+exp_pubbutton = tk.Button(master=exp_frame2, text='Publish')
+exp_pubbutton.grid(column=0, row=0, pady=10)
 exp_pubbutton.bind("<Button-1>", publishLogFile)
 
 # Initialize Reset button for resetting all fields for future use
-exp_resetbutton = tk.Button(text='Reset')
-exp_resetbutton.grid(column=4, row=8, columnspan=2)
+exp_resetbutton = tk.Button(master=exp_frame2, text='Reset')
+exp_resetbutton.grid(column=0, row=1, pady=10)
 exp_resetbutton.bind("<Button-1>", resetFields)
+
+exp_frame2.grid(column=4, row=7, columnspan=2, rowspan=2)
+root.resizable(width=False, height=False)
 
 root.mainloop()
