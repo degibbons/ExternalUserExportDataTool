@@ -1,12 +1,13 @@
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfilename
+from tkinter import messagebox
 import re
 from shutil import copyfile
 import os
 from docx import Document
 
 global targDir
-
+global targFile
 
 def loadLogFile(event):
     # Select and Load file
@@ -107,14 +108,19 @@ def selectDestination(event):
 def loadTemplateFile(event):
     # Make a copy of reference doc
     global targDir
+    global targFile
     filepath = askopenfilename(
         filetypes=[("Word Doc Files", "*.docx"), ("All Files", "*.*")]
     )
     if not filepath:
         return
-    outFile = targDir + "/External_User_Info.docx"
+    # ref_file = filepath.split('/')[-1]
+    # exp_addcomment.insert("1.0", new_string)
+
+    # outFile = filepath.replace(ref_file, "External_User_Info.docx")
+    outFile = (targDir + "/External_User_Info.docx")
     copyfile(filepath, outFile)
-    targDir = outFile
+    targFile = outFile
 
     return
 
@@ -122,28 +128,13 @@ def loadTemplateFile(event):
 def publishLogFile(event):
     # Publish field information to new doc copy
     global targDir
+    global targFile
     # cwd = os.getcwd()
     # os.chdir()
 
     # with open(targDir, 'rb') as f:
     #     source_stream = StringIO(f.read())
     #     document = Document(f)
-
-    doc = Document(targDir)
-    DateLine = doc.paragraphs[1]
-    FileLine = doc.paragraphs[2]
-    ScannedLine = doc.paragraphs[3]
-    MachineLine = doc.paragraphs[4]
-    VoltageLine = doc.paragraphs[6]
-    CurrentLine = doc.paragraphs[7]
-    PixelLine = doc.paragraphs[8]
-    FilterLine = doc.paragraphs[9]
-    ExposureLine = doc.paragraphs[10]
-    RotationLine = doc.paragraphs[11]
-    FrameLine = doc.paragraphs[12]
-    RandMovLine = doc.paragraphs[13]
-    Rot360Line = doc.paragraphs[14]
-    AddCommentsLine = doc.paragraphs[15]
 
     NewDate = exp_date.get()
     NewFile = exp_filename.get()
@@ -154,13 +145,53 @@ def publishLogFile(event):
     NewPixel = exp_pixelsize.get()
     NewFilter = exp_filter.get()
     NewExposure = exp_exposure.get()
-    NewRotation= exp_rotationstep.get()
+    NewRotation = exp_rotationstep.get()
     NewFrame = exp_frameaverage.get()
     NewRandMov = exp_randmovement.get()
-    NewRot360 = # 
-    NewAddComment = exp_addcomment.get("1.0",tk.END)
+    NewRot360 = rbVar.get()
+    NewAddComment = exp_addcomment.get("1.0", tk.END)
 
-    #exp_addcomment.insert("1.0", VoltageLine.text)
+    doc = Document(targFile)
+
+    for run in doc.paragraphs:
+        if "Date: " in run.text:
+            run.text = run.text.replace("Date: ", "Date: " + NewDate)
+        elif "File Name(s): " in run.text:
+            run.text = run.text.replace("File Name(s): ", "File Name(s): " + NewFile)
+        elif "Scanned by: Kelsi Hurdle " in run.text:
+            run.text = run.text.replace("Scanned by: Kelsi Hurdle", "Scanned by: " + NewScanned)
+        elif "Machine: Bruker Skyscan 1173 " in run.text:
+            run.text = run.text.replace("Machine: Bruker Skyscan", "Machine: " + NewMachine)
+        elif "Voltage (kV): " in run.text:
+            run.text = run.text.replace("Voltage (kV): ", "Voltage (kV): " + NewVoltage)
+        elif "Current (uA): " in run.text:
+            run.text = run.text.replace("Current (uA): ", "Current (uA): " + NewCurrent)
+        elif "Pixel Size (μm): " in run.text:
+            run.text = run.text.replace("Pixel Size (μm): ", "Pixel Size (μm): " + NewPixel)
+        elif "Filter: " in run.text:
+            run.text = run.text.replace("Filter: ", "Filter: " + NewFilter)
+        elif "Exposure (ms): " in run.text:
+            run.text = run.text.replace("Exposure (ms): ", "Exposure (ms): " + NewExposure)
+        elif "Rotation Step (deg): " in run.text:
+            run.text = run.text.replace("Rotation Step (deg): ", "Rotation Step (deg): " + NewRotation)
+        elif "Frame Averaging: " in run.text:
+            run.text = run.text.replace("Frame Averaging: ", "Frame Averaging: " + NewFrame)
+        elif "Random Movement: " in run.text:
+            run.text = run.text.replace("Random Movement: ", "Random Movement: " + NewRandMov)
+        elif "360° Rotation?: " in run.text:
+            run.text = run.text.replace("360° Rotation?: ", "360° Rotation?: " + NewRot360)
+        elif "Additional Comments: " in run.text:
+            run.text = run.text.replace("Additional Comments: ", "Additional Comments: " + NewAddComment)
+
+    # fullText = []
+    # for para in doc.paragraphs:
+    #     fullText.append(para.text)
+    # fullText = "\n".join(fullText)
+    # exp_addcomment.delete("1.0", tk.END)
+    # exp_addcomment.insert("1.0", fullText)
+    # textboxlines = int(exp_addcomment.index('end-1c').split('.')[0])  # returns line count
+    # re.sub(rf"\r\n{textboxlines-1}", '', fullText)
+    doc.save(targFile)
 
 def resetFields(event):
     exp_date.delete(0, tk.END)
@@ -176,15 +207,16 @@ def resetFields(event):
     exp_frameaverage.delete(0, tk.END)
     exp_randmovement.delete(0, tk.END)
     exp_360moveY.select()
-    exp_filter.delete("1.0", tk.END)
+    exp_addcomment.delete("1.0", tk.END)
 
 
 # Initialize the GUI Window
 root = tk.Tk()
+root.title("Export Info Tool")
 
 # Add the Title of the Tool to the top of the window
-frame_1 = tk.Frame(master=root, relief=tk.RAISED, borderwidth=1)
-exp_title = tk.Label(master=frame_1, text='External User Log Tool', font="Helvetica 18 bold")
+frame_1 = tk.Frame(master=root, relief=tk.RIDGE, borderwidth=1)
+exp_title = tk.Label(master=frame_1, text='External User Log Tool', relief=tk.SUNKEN, font="Helvetica 18 bold")
 frame_1.grid(column=0, row=0, columnspan=6)
 exp_title.grid(column=0, row=0, sticky='EW')
 
@@ -272,7 +304,7 @@ exp_randmovement.grid(column=3, row=5, sticky='w')
 # Initialize radio buttons for indicating if there was or was not 360 degree rotation
 exp_360move_Label = tk.Label(text='360\u00B0 Rotation?: ')
 exp_360move_Label.grid(column=4, row=5, columnspan=2)
-rbVar = ''
+rbVar = tk.StringVar()
 exp_360moveY = tk.Radiobutton(root, text='Yes', variable=rbVar, value='Yes')
 exp_360moveY.grid(column=4, row=6, sticky='e')
 exp_360moveN = tk.Radiobutton(root, text='No', variable=rbVar, value='No')
@@ -284,7 +316,7 @@ exp_360moveN.deselect()
 exp_addcomment_Label = tk.Label(text='Additional Comments: ')
 exp_addcomment_Label.grid(column=0, row=6, columnspan=2, sticky='w', padx=10)
 exp_addcomment = tk.Text(height=10)
-exp_addcomment.grid(column=0, row=7, columnspan=4, rowspan=2, padx=10, pady=10)
+exp_addcomment.grid(column=0, row=7, columnspan=4, rowspan=2, padx=10, pady=(0,10))
 
 exp_frame2 = tk.Frame(master=root)
 
